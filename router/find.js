@@ -189,26 +189,28 @@ router.post('/townlists', async ctx => {
             }).toString();
         });
 })
-router.get('/pages', async ctx => {
-    if (!(ctx.request.query.id)) {
-        return ctx.body = JSON.stringify({
-            code: -1,
-            message: "出错",
-        }).toString();
-    }
-    await db.pagesfind(ctx.request.query.id, ctx.request.query.town, ctx.request.query.sort)
-        .then((result) => {
-            ctx.body = JSON.stringify({
-                code: 200,
-                data: result,
-            });
-        })
-        .catch(async (err) => {
-            if (err) console.log(err);
-            ctx.body = JSON.stringify({
-                code: -1,
-                message: "出错",
-            }).toString();
-        });
-})
+// router.get('/pages', async (ctx) => {
+//     const { id, town, sort } = ctx.request.query;
+//     // 检查是否传入了必要的参数
+//     if (!id || !town) {
+//         ctx.body = {
+//             code: -1,
+//             message: "参数错误，缺少 id 或 town"
+//         };
+//         return;
+//     }
+//     try {
+//         const result = await db.pagesfind(id, town, sort || 'ctime');
+//         ctx.body = {
+//             code: 200,
+//             data: result,
+//         };
+//     } catch (error) {
+//         console.error('Error:', error);
+//         ctx.body = {
+//             code: -1,
+//             message: "查询出错"
+//         };
+//     }
+// });
 module.exports = router.routes();

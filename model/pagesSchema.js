@@ -1,10 +1,15 @@
 const mongoose = require('mongoose');
-const mongoosePaginate = require('mongoose-paginate');
 const Schema = mongoose.Schema;
 
 var PagesSchema = new Schema({
-    title: String,
-    content: String,
+    title: {
+        type: String,
+        required: true
+    },
+    content: {
+        type: String,
+        required: true
+    },
     ctime: {
         type: Date,
         default: Date.now
@@ -14,6 +19,5 @@ var PagesSchema = new Schema({
         required: true
     }
 });
-PagesSchema.plugin(mongoosePaginate)
 
 module.exports = PagesSchema;
