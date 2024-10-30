@@ -9,6 +9,9 @@ const articleSchema = require('../model/articleSchema');
 const townSchema = require('../model/townSchema');
 const pagesSchema = require('../model/pagesSchema');
 const VisitSchema = require('../model/visitSchema');
+const LoginSchema = require('../model/loginSchema');
+const hotelSchema = require('../model/hotelSchema');
+const merchantSchema = require('../model/merchantSchema');
 
 var mongooses = mongoose.createConnection(key.mongourl, {
     useNewUrlParser: true,
@@ -135,23 +138,24 @@ db.listsfind = (town, sort, page, limit) => {
 }
 
 db.pagesfind = (id, town, sort = 'ctime') => {
-    const Page = mongoose.model("article", pagesSchema, "article");
-    return Page.findById(id).exec()
+    const Page = mongooses.model("article", pagesSchema, "article");
+    console.log("查找文章 ID:", id, "城镇:", town); // 调试信息
+    return Page.findOne({ _id: id }).exec()
         .then(currentPage => {
-            if (!currentPage) {
-                return { previous: null, next: null };
-            }
+            if (!currentPage) return { previous: null, next: null };
+
             const query = { town: town };
-            // 获取上一篇文章
+
             const previousQuery = Page.find({ ...query, [sort]: { $lt: currentPage[sort] } })
-                .sort({ [sort]: -1 }) // 按照时间最近的一篇
+                .sort({ [sort]: -1 })
                 .limit(1)
                 .exec();
-            // 获取下一篇文章
+
             const nextQuery = Page.find({ ...query, [sort]: { $gt: currentPage[sort] } })
-                .sort({ [sort]: 1 }) // 按照时间最早的一篇
+                .sort({ [sort]: 1 })
                 .limit(1)
                 .exec();
+
             return Promise.all([previousQuery, nextQuery])
                 .then(([previousPage, nextPage]) => ({
                     previous: previousPage.length ? { id: previousPage[0]._id, title: previousPage[0].title } : null,
@@ -164,29 +168,29 @@ db.pagesfind = (id, town, sort = 'ctime') => {
         });
 };
 
-// db.getVisitStats = async () => {
-//     const VisitModel = mongooses.model('vis', VisitSchema, 'vis');
-//     try {
-//         const today = new Date();
-//         const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-//         const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-//         const dailyStats = await VisitModel.aggregate([
-//             { $match: { time: { $gte: startOfDay } } },
-//             { $group: { _id: null, total: { $sum: '$persion' } } }
-//         ]);
-//         const monthlyStats = await VisitModel.aggregate([
-//             { $match: { time: { $gte: startOfMonth } } },
-//             { $group: { _id: null, total: { $sum: '$persion' } } }
-//         ]);
-//         return {
-//             dailyVisits: dailyStats[0] ? dailyStats[0].total : 0,
-//             monthlyVisits: monthlyStats[0] ? monthlyStats[0].total : 0,
-//         };
-//     } catch (error) {
-//         console.error("获取访问统计时出错:", error);
-//         return { dailyVisits: 0, monthlyVisits: 0 };
-//     }
-// };
+db.getVisitStats = async () => {
+    const VisitModel = mongooses.model('vis', VisitSchema, 'vis');
+    try {
+        const today = new Date();
+        const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+        const dailyStats = await VisitModel.aggregate([
+            { $match: { time: { $gte: startOfDay } } },
+            { $group: { _id: null, total: { $sum: '$persion' } } }
+        ]);
+        const monthlyStats = await VisitModel.aggregate([
+            { $match: { time: { $gte: startOfMonth } } },
+            { $group: { _id: null, total: { $sum: '$persion' } } }
+        ]);
+        return {
+            dailyVisits: dailyStats[0] ? dailyStats[0].total : 0,
+            monthlyVisits: monthlyStats[0] ? monthlyStats[0].total : 0,
+        };
+    } catch (error) {
+        console.error("获取访问统计时出错:", error);
+        return { dailyVisits: 0, monthlyVisits: 0 };
+    }
+};
 
 // 更新vis表
 db.recordVisit = async () => {
@@ -238,6 +242,40 @@ db.getTownArticleCounts = async () => {
     }
 };
 
+db.loginFind = async () => {
+    const Login = mongooses.model("login", LoginSchema, "login");
+    return Login.findOne({ username: username, password: password });
+}
 
+db.hotelFind = async () => {
+    const Hotel = mongooses.model("merchant", hotelSchema, "merchant");
+    return Hotel.find({});
+};
+// db.merchantupdate = async (name, town, sort, info, pictureurl, erweimapic) => {
+//     const Merchant = mongooses.model("merchant", merchantSchema, "merchant");
+//     var updatedata = {
+//         utime: new Date(),
+//         info: info,
+//         pictureurl: pictureurl,
+//         erweimapic: erweimapic,
+//     };
+
+//     const result = await Merchant.updateOne(
+//         { name: name, town: town, sort: sort }, // 根据 name, town 和 sort 查找文档
+//         { $setOnInsert: { ctime: new Date() }, $set: updatedata },
+//         { new: true, upsert: true }
+//     );
+
+//     // 检查更新结果
+//     if (result.matchedCount === 0) {
+//         console.log("没有找到匹配的文档，可能是插入操作");
+//     } else if (result.modifiedCount > 0) {
+//         console.log("文档更新成功");
+//     } else {
+//         console.log("文档未修改");
+//     }
+
+//     return result;
+// }
 
 module.exports = db;
